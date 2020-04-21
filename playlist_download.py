@@ -34,17 +34,12 @@ def make_playlist_directory(save_destination, playlist_name):
         playlist_name (str): Name of playlist or video folder
 
        """
-    if not os.path.exists(f'temp/{playlist_name}'):
-        os.makedirs(f'temp/{playlist_name}')
-        print("Directory ", playlist_name, " in /temp Created ")
-    else:
-        print("Directory ", playlist_name, " on /temp already exists")
-
-    if not os.path.exists(f'{save_destination}/{playlist_name}'):
-        os.mkdir(f'{save_destination}/{playlist_name}')
-        print("Directory ", f'{save_destination}/{playlist_name}', " Created ")
-    else:
-        print("Directory ", f'{save_destination}/{playlist_name}', " already exists")
+    for ddir in [f'temp/{playlist_name}', f'{save_destination}/{playlist_name}']:
+        if not os.path.exists(ddir):
+            os.makedirs(ddir)
+            print("Directory ", ddir, " Created ")
+        else:
+            print("Directory ", ddir, " already exists")
 
 
 def add_index(video_name, download_number):
@@ -79,10 +74,11 @@ def download_playlist(save_destination, playlist_name, playlist_url, convert):
        """
     print(f'Playlist name: {playlist_name}')
     make_playlist_directory(save_destination, playlist_name)
+    temp_dir = f'temp/{playlist_name}'
     playlist = extract_urls(playlist_url)
     video_name = 0
     data_format = 1
-    print('Number of videos in playlist: %s' % len(playlist))
+    print(f'Number of videos in playlist: {len(playlist)}')
 
     for index, video in zip(range(1, len(playlist) + 1), playlist):
         vid = YouTube(video)
@@ -94,25 +90,25 @@ def download_playlist(save_destination, playlist_name, playlist_url, convert):
         # only download if it doesn't exist
 
         # Download Audio
-        vid.streams.get_audio_only().download(f'temp/{playlist_name}')
+        vid.streams.get_audio_only().download(temp_dir)
 
         # Try to rename files
-        for fname in os.listdir(f'temp/{playlist_name}'):
+        for fname in os.listdir(temp_dir):
             if vid.title == fname.split('.')[video_name]:
-                shutil.move(f'temp/{playlist_name}/{fname}',
-                            f'temp/{playlist_name}/{".".join([file_name_form, fname.split(".")[data_format]])}')
+                shutil.move(f'{temp_dir}/{fname}',
+                            f'{temp_dir}/{".".join([file_name_form, fname.split(".")[data_format]])}')
         
         if convert is True:
             # Convert to mp3
-            os.system(f'audioconvert convert temp/{playlist_name} {save_destination}/{playlist_name} -o .mp3')
+            os.system(f'audioconvert convert {temp_dir} {save_destination}/{playlist_name} -o .mp3')
         else:
             # Move files
-            for fname in os.listdir(f'temp/{playlist_name}'):
-                shutil.move(f'temp/{playlist_name}/{fname}',
+            for fname in os.listdir(temp_dir):
+                shutil.move(f'{temp_dir}/{fname}',
                                 f'{save_destination}/{playlist_name}/{fname}')
 
         # Remove temp files
-        shutil.rmtree(f'temp/{playlist_name}')
+        shutil.rmtree(temp_dir)
 
     # Remove temp files
     shutil.rmtree(f'temp')
